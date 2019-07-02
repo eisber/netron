@@ -4,6 +4,7 @@
 var sidebar = sidebar || {};
 var long = long || { Long: require('long') };
 var Handlebars = Handlebars || require('handlebars');
+var Taucharts = Taucharts || require("taucharts");
 
 sidebar.Sidebar = class {
 
@@ -181,8 +182,10 @@ sidebar.NodeSidebar = class {
             this.addHeader('Inputs');
             for (var input of inputs) {
                 this.addInput(input.name, input);
+                console.log(input);
             }
         }
+
 
         var outputs = node.outputs;
         if (outputs && outputs.length > 0) {
@@ -275,11 +278,11 @@ sidebar.NodeSidebar = class {
             return 'NaN';
         }
         switch (type) {
-            case 'shape': 
+            case 'shape':
                 return value.toString();
-            case 'shape[]': 
+            case 'shape[]':
                 return value.map((item) => item.toString()).join(', ');
-            case 'graph': 
+            case 'graph':
                 return value.toString();
             case 'graph[]':
                 return value.map((item) => item.toString()).join(', ');
@@ -313,7 +316,7 @@ sidebar.NodeSidebar = class {
             if (ellipsis) {
                 array.push('\u2026')
             }
-            return quote ? [ '[', array.join(', '), ']' ].join(' ') : array.join(', ');
+            return quote ? ['[', array.join(', '), ']'].join(' ') : array.join(', ');
         }
         if (value === null) {
             return quote ? 'null' : '';
@@ -339,9 +342,9 @@ sidebar.NodeSidebar = class {
             objectType = value.constructor.name;
         }
         if (objectType) {
-            return objectType + (list.length == 0 ? '()' : [ '(', list.join(', '), ')' ].join(''));
+            return objectType + (list.length == 0 ? '()' : ['(', list.join(', '), ')'].join(''));
         }
-        return list.length == 0 ? (quote ? '()' : '') : (quote ? [ '(', list.join(', '), ')' ].join(' ') : list.join(', '));
+        return list.length == 0 ? (quote ? '()' : '') : (quote ? ['(', list.join(', '), ')'].join(' ') : list.join(', '));
     }
 };
 
@@ -448,7 +451,7 @@ class NodeAttributeView {
     }
 
     render() {
-        return [ this._element ];
+        return [this._element];
     }
 
     toggle() {
@@ -588,7 +591,10 @@ sidebar.ArgumentView = class {
         if (this._expander) {
             if (this._expander.innerText == '+') {
                 this._expander.innerText = '-';
-    
+
+                console.log(this._argument.type);
+                console.log(this._argument);
+
                 var initializer = this._argument.initializer;
                 if (initializer && this._hasId) {
                     var kind = initializer.kind;
@@ -599,14 +605,14 @@ sidebar.ArgumentView = class {
                         this._element.appendChild(kindLine);
                     }
                 }
-    
+
                 var type = '?';
                 var denotation = null;
                 if (this._argument.type) {
                     type = this._argument.type.toString();
                     denotation = this._argument.type.denotation || null;
                 }
-                
+
                 if (type) {
                     var typeLine = document.createElement('div');
                     typeLine.className = 'sidebar-view-item-value-line-border';
@@ -645,8 +651,8 @@ sidebar.ArgumentView = class {
                         this._element.appendChild(referenceLine);
                     }
                     var state = initializer.state;
-                    if (state === null && this._host.save && 
-                        initializer.type.dataType && initializer.type.dataType != '?' && 
+                    if (state === null && this._host.save &&
+                        initializer.type.dataType && initializer.type.dataType != '?' &&
                         initializer.type.shape && initializer.type.shape.dimensions && initializer.type.shape.dimensions.length > 0) {
                         this._saveButton = document.createElement('div');
                         this._saveButton.className = 'sidebar-view-item-value-expander';
@@ -655,11 +661,35 @@ sidebar.ArgumentView = class {
                             this._raise('export-tensor', initializer);
                         });
                         this._element.appendChild(this._saveButton);
+
+                        if (initializer.toGraph) {
+                            try {
+                                var chartElement = document.createElement('div');
+
+                                var chart = new Taucharts.Chart({
+                                    type: 'bar',
+                                    x: 'x',
+                                    y: 'y',
+                                    dimensions: {
+                                        y: { type: 'measure' },
+                                        x: { type: 'measure' }
+                                    },
+                                    data: initializer.toGraph()
+                                });
+                                chart.renderTo(chartElement);
+
+                                this._element.appendChild(chartElement);
+                            }
+                            catch (e) {
+                                console.log(e);
+                            }
+                        }
                     }
 
                     var valueLine = document.createElement('div');
                     valueLine.className = 'sidebar-view-item-value-line-border';
                     var contentLine = document.createElement('pre');
+
                     contentLine.innerHTML = state || initializer.toString();
                     valueLine.appendChild(contentLine);
                     this._element.appendChild(valueLine);
@@ -695,7 +725,7 @@ sidebar.ModelSidebar = class {
         this._host = host;
         this._model = model;
         this._elements = [];
-    
+
         if (this._model.format) {
             this.addProperty('format', new sidebar.ValueTextView(this._model.format));
         }
@@ -719,7 +749,7 @@ sidebar.ModelSidebar = class {
         }
         if (this._model.company) {
             this.addProperty('company', new sidebar.ValueTextView(this._model.company));
-        }    
+        }
         if (this._model.license) {
             this.addProperty('license', new sidebar.ValueTextView(this._model.license));
         }
@@ -763,7 +793,7 @@ sidebar.ModelSidebar = class {
                 graphTitleElement.appendChild(graphButton);
                 this._elements.push(graphTitleElement);
             }
-    
+
             if (graph.name) {
                 this.addProperty('name', new sidebar.ValueTextView(graph.name));
             }
@@ -998,7 +1028,7 @@ sidebar.FindSidebar = class {
 
         var nodesElement = this._graphElement.getElementById('nodes');
         var nodeElement = nodesElement.firstChild;
-        while (nodeElement) { 
+        while (nodeElement) {
             if (nodeElement.id == id) {
                 selection.push(nodeElement);
             }
@@ -1006,7 +1036,7 @@ sidebar.FindSidebar = class {
         }
 
         var edgePathsElement = this._graphElement.getElementById('edge-paths');
-        var edgePathElement = edgePathsElement.firstChild; 
+        var edgePathElement = edgePathsElement.firstChild;
         while (edgePathElement) {
             if (edgePathElement.id == id) {
                 selection.push(edgePathElement);
@@ -1067,7 +1097,7 @@ sidebar.FindSidebar = class {
                         else {
                             initializers.push(argument.initializer);
                         }
-                    }    
+                    }
                 }
             }
 
@@ -1097,14 +1127,14 @@ sidebar.FindSidebar = class {
                         outputItem.id = 'edge-' + argument.id;
                         this._resultElement.appendChild(outputItem);
                         edgeMatches[argument.id] = true;
-                    }    
+                    }
                 }
             }
         }
 
         this._resultElement.style.display = this._resultElement.childNodes.length != 0 ? 'block' : 'none';
     }
-    
+
     get content() {
         return this._contentElement;
     }

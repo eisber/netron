@@ -25,6 +25,7 @@
         "marked": "0.6.3",
         "pako": "1.0.10",
         "protobufjs": "github:lutzroeder/protobuf.js#pbtxt",
+        "taucharts": "^2.7.3",
         "universal-analytics": "0.4.20"
     },
     "devDependencies": {
